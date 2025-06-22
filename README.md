@@ -19,7 +19,7 @@ Finally, different segmentations were created to classify each client into diffe
 ```
 ├── grocery_store_client_classif.Rmd   # Original markdown R file
 ├── grocery_store_client_classif.html  # Final html report
-├── data/                              # Database
+├── clientes_pda.csv                   # Grocery's client database
 ├── images/                            # Graphics Visualization
 ├── README.md                          # Project description
 ```
