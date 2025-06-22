@@ -1,0 +1,480 @@
+---
+title: "Quiz 2 - Grupo 2"
+author: "Eric Lee, Guilherme Fidalgo, Arthur Campedelli"
+date: "Junho-2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Quiz 2
+
+O objetivo é criar **grupos homogêneos** que permitam o Grupo Pão de Açúcar:
+
+-   Personalizar campanhas de marketing.
+
+-   Desenvolver ofertas específicas para aumentar o ticket médio.
+
+## Base de Dados:
+
+| Variável | Descrição |
+|----|----|
+| idade | Idade do cliente |
+| renda | Renda mensal do cliente |
+| score_serasa | Score de crédito do cliente |
+| interesse | Grau de interesse (frequência de compra) |
+| dias_ult_compra | Dias desde a última compra |
+| vlr_tran_total_6m | Valor total gasto nos últimos 6 meses |
+| gasto_vinho_6m | Gasto em vinho nos últimos 6 meses |
+| gasto_queijo_6m | Gasto em queijo nos últimos 6 meses |
+| gasto_cerveja_6m | Gasto em cerveja nos últimos 6 meses |
+| gasto_flv_6m | Gasto em frutas, legumes e verduras nos últimos 6 meses |
+| gasto_mercearia_6m | Gasto em mercearia nos últimos 6 meses |
+
+## **Parte 1: Análise descritiva dos dados**
+
+### a) Apresente a base de dados e descreva suas variáveis
+
+Cada linha deste *dataset* representa um cliente único. E as informações que temos deste cliente são: Idade; Renda; Score de crédito; interesse; Dias desde a última compra; Valor total gasto nos últimos 6 meses; Gasto em vinho nos últimos 6 meses; Gasto em queijo nos últimos 6 meses; Gasto em cerveja nos últimos 6 meses; Gasto em frutas, legumes e verduras nos últimos 6 meses; Gasto em mercearia nos últimos 6 meses;
+
+Com base nestes dados, poderemos criar perfiss dos clientes do Pão de Açúcar, mercado utilizado como contexto neste exercício.
+
+### b) Realize uma análise descritiva das principais métricas.
+
+```{r, message=FALSE, warning=FALSE}
+# Carregar bibliotecas necessárias
+library(readxl);
+library(dplyr);
+library(tidyverse);
+library(GGally);
+library(factoextra);
+library(ggplot2);
+library(ggrepel);
+library(plotly);
+library(cluster);
+library(tidyr);
+library(patchwork);
+```
+
+```{r, message=FALSE, warning=FALSE}
+dados <- read_csv("clientes_pda.csv");
+
+# Resumo descritivo
+summary(dados)
+```
+
+Através da análise exploratória inicial da base de dados, existem algumas constatações interessantes:
+
+-   **Idade**: Varia de 36 a 53 anos, com média de 43,67 anos e mediana de 43 anos, indicando uma distribuição relativamente simétrica. A maioria dos clientes está entre 42 e 45 anos (quartis Q1 e Q3).
+
+-   **Renda**: A renda mensal varia de R\$831,60 a R\$9.436,00, com média de R\$4.178,60 e mediana de R\$3.638,30, sugerindo leve assimetria à direita (clientes com rendas mais altas). A maior parte dos clientes tem renda entre R\$2.938,80 e R\$5.187,60.
+
+-   **Score Serasa**: O score de crédito varia de 406,8 a 901,4, com média de 639,7 e mediana de 609,8, indicando boa saúde financeira em geral. Os quartis mostram que a maioria tem scores entre 557,1 e 747,2.
+
+-   **Interesse**: O grau de interesse (ou frequência de compra) varia de 0 a 1, com média de 0,7191 e mediana de 0,84, sugerindo que a maioria dos clientes tem interesse moderado a alto. Os quartis indicam valores concentrados entre 0,65 e 1.
+
+-   **Dias desde a última compra**: Varia de 0 a 187 dias, com média de 57,51 dias e mediana de 38 dias, indicando que muitos clientes não compram há mais de um mês. Os quartis mostram que a maioria está entre 22 e 61 dias.
+
+-   **Valor total gasto (6 meses)**: Varia de R\$0 a R\$2.788,70, com média de R\$711,60 e mediana de R\$370,60, sugerindo alta variabilidade e assimetria à direita (alguns clientes gastam muito mais e podem ser um perfil diferente, ou *outliers*). A maioria gasta entre R\$158,20 e R\$829,10.
+
+-   **Gasto em vinho (6 meses)**: Varia de R\$0 a R\$298,90, com média de R\$19,59 e mediana de R\$0,06, indicando que a maioria gasta pouco ou nada em vinho. Os quartis mostram valores entre R\$0 e R\$3,78.
+
+-   **Gasto em queijo (6 meses)**: Varia de R\$0 a R\$77,35, com média de R\$8,06 e mediana de R\$0,04, sugerindo que, assim como o vinho, poucos clientes gastam significativamente em queijo. A maioria tem gastos entre R\$0 e R\$14,66.
+
+-   **Gasto em cerveja (6 meses)**: Varia de R\$0 a R\$3.958,18, com média de R\$105,71 e mediana de R\$0,05, indicando alta assimetria (alguns clientes, talve outliers, gastam muito em cerveja). Majoritariamente, os gastos são entre R\$0 e R\$19,05.
+
+-   **Gasto em frutas, legumes e verduras (6 meses)**: Varia de R\$0 a R\$436,98, com média de R\$53,94 e mediana de R\$10,87, mostrando variabilidade moderada. A maioria gasta entre R\$0,72 e R\$67,54.
+
+-   **Gasto em mercearia (6 meses)**: Varia de R\$0 a R\$631,68, com média de R\$56,95 e mediana de R\$22,71, indicando que a maioria gasta valores moderados, com alguns outliers altos. Os quartis mostram gastos entre R\$1,26 e R\$56,42.
+
+**Observações gerais**:
+
+-   Variáveis como renda, vlr_tran_total_6m, gasto_cerveja_6m e gasto_mercearia_6m apresentam assimetria à direita, com médias superiores às medianas, sugerindo a presença de outliers (clientes com valores muito altos).
+
+-   Variáveis de gastos específicos (vinho, queijo, cerveja) têm medianas próximas de zero, indicando que muitos clientes não compram esses itens ou gastam pouco.
+
+-   Não só a mediana é próxima a 0, mas em gastos com Vinho, Queijo, Cerveja, o primeiro quadrante **é** zero. E em mercearias e frutas, legumes e verduras, é muito próximo de zero. Isso indica que muitos dos clientes dessa base podem não consumir muitas dessas categorias, e possivelmente, sejam clientes que não realizam compras em nenhuma delas.
+
+-   A variável dias_ult_compra sugere que uma parte dos clientes está inativa há mais de dois meses, o que pode indicar oportunidades para campanhas de reengajamento.
+
+### c) Explore as distribuições das variáveis e identifique possíveis outliers ou padrões relevantes.
+
+```{r, message=FALSE, warning=FALSE}
+
+# Transformar os dados para o formato long format para poder facetar
+dados_long <- pivot_longer(dados, cols = everything(), names_to = "variavel", values_to = "valor")
+
+# Criar o gráfico com histogramas facetados
+ggplot(dados_long, aes(x = valor)) +
+  geom_histogram(aes(y = ..density..), bins = 30, fill = "skyblue", color = "black") +
+  facet_wrap(~ variavel, scales = "free", ncol = 3) +
+  labs(title = "Distribuição das Variáveis", x = "Valor", y = "Densidade")
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Criar o gráfico com boxplots facetados
+ggplot(dados_long, aes(x = 1, y = valor)) +
+  geom_boxplot(fill = "skyblue", color = "black") +
+  facet_wrap(~ variavel, scales = "free_y", ncol = 4) +
+  labs(title = "Boxplots das Variáveis", x = "", y = "Valor")
+```
+
+É perceptível através dos histogramas, que existe 2 grupos de clientes do Pão de Açúcar, a partir das variáveis renda, score_serasa e vlr_tran_total_6m: um grupo maior de pessoas com valores menores, e outro grupo com uma concentração um pouco menor, mas com valores bem maiores. Isso indica uma distinção entre um público mais *"premium"* e um outro grupo, relativamente mais "popular".
+
+Vemos também que o interesse dos clientes, se mantém alto, havendo alguns *outliers* com interesse baixo. Isso é condizente com o *boxplot* de dias desde a última compra, pois existe um grupo pequeno que são *outliers* também que ficaram muitos dias sem comprar.
+
+Os gastos com produtos específicos (queijo, vinho, legumes, etc.) são, por outro lado, um pouco contraditórios, pois apesar de muitos clientes recorrentes e interessados, parece que todos tem uma concentração baixa, isto é, os clientes concentram-se em um grupo que costumam gastar pouco em todos essas categorias.
+
+## **Parte 2: Agrupamento por K-Means**
+
+### a) Escolha o número de clusters utilizando métodos como o cotovelo e/ou silhueta.
+
+```{r, message=FALSE, warning=FALSE}
+dados_pad <- dados %>%
+  scale()
+
+set.seed(123)
+
+k <- 2:20
+tibble(k = k) %>% 
+  mutate(w = map_dbl(k, ~ kmeans(dados_pad, centers = .x,
+                                 nstart = 10)$tot.withinss)) %>% 
+  ggplot(aes(k, w)) + 
+  geom_point() + 
+  scale_x_continuous(breaks = k) +
+  geom_line()
+
+```
+
+A partir do **Método do Cotovelo** podemos perceber que um número ideal de _clusters_ seria 6, pois é o ponto em que o aumento do número de clusters não traz uma melhora significativa na redução da variância.
+
+
+### b) Aplique o K-means com o número escolhido de clusters e interprete as características de cada grupo.
+
+```{r, message=FALSE, warning=FALSE}
+set.seed(123)
+
+# Cria um df_p2b com os dados originais e adiciona uma coluna com os clusters do
+# KMEANS, calculados à partir dos dados_pad (padronizados).
+df_p2b <- dados %>% 
+  mutate(cluster = factor(kmeans(dados_pad, centers = 6, nstart = 10)$cluster))
+```
+
+```{r, message=FALSE, warning=FALSE}
+df_p2b %>% 
+  mutate(cluster = fct_reorder(cluster,  
+                               idade,
+                               .fun = median)) %>% 
+  ggplot(aes(idade,
+             cluster,
+             fill = cluster, group = cluster)) + 
+  geom_boxplot(show.legend = F) +
+  labs(x = "Idade", y = "Cluster")
+```
+
+Ao análisar a idade, percebe-se uma pequena variação entre os grupos, mas o grupo 2 (verde), 5 (amarelo) e 1 (vermelho), se sobrepõem, indicando que possivelmente outras características distinguem esses grupos, mas que também é possível que haja mais clusters do que o necessário.
+
+```{r, message=FALSE, warning=FALSE}
+# Gráfco de dispersão de interesse vs vlr_tran_total_6m
+df_p2b %>% 
+  ggplot(aes(interesse, vlr_tran_total_6m, color = cluster)) + 
+  geom_point(size = 5, alpha = .3) +
+  theme_bw()
+```
+
+No gráfico acima foram escolhidos 2 parâmetros, "interesse" e "valor total gasto nos últimos 6 meses". Percebe-se que há pelo menos 4 grupos bem distintos. Contudo, o cluster 2 e 3, e o cluster 4 e 6 possuem valores bem próximos e se misturam bastante nestas duas variáveis.
+
+```{r, message=FALSE, warning=FALSE}
+df_p2b %>% 
+  mutate(across(where(is.numeric), scale)) %>% 
+  group_by(cluster) %>% 
+  summarise(across(where(is.numeric), mean)) %>% 
+  pivot_longer(-cluster) %>% 
+  ggplot(aes(name, value, group = cluster, color = cluster)) + 
+  geom_line(size = 1) + 
+  geom_point(size = 4) +
+  labs(x = "", y = "Valor medio (padronizado)", color = "Grupo")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Em resumo, através do método cotovelo, foi decidido que a base seria classificada em 6 Clusters. Percebe-se um comportamento bem distribuído no gráfico de linha e cada grupo possui alguns picos em determinadas características, mas outras análises também sugerem que existem mais clusters do que o necessário. Além disso, é difícil concluir o que caracteriza cada grupo, com todas as divisões.
+
+Alguns grupos ficam mais evidentes, como por exemplo, o grupo 5 parece ser de clientes com menor interesse no Pão de Açúcar e menos gastos em geral também, além de fazer muito tempo desde a última compra. Já o grupo 2 parece ter maior renda, mais gasto com vinho e melhor "score" do Seras, podendo indicar um grupo mais abastado financeiramente. Mas os outros grupos são um pouco mais contraditórios, por exemplo, o grupo 6 não tem a melhor renda e score no Serasa, mas houve um maior gasto nos últimos 6 meses em média, consomem mais cerveja, e parece concentrar as idades mais avançadas.
+
+```{r, message=FALSE, warning=FALSE}
+# silhouette --------------------------------------------------------------
+
+# obtem os coeficientes
+# df_p2b_sil <- silhouette(as.numeric(descricao$cluster), 
+#                      dist(dados_pad)^2)
+
+# obtem a media do coeficiente por cluster
+# fviz_silhouette(df_p2b_sil)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+# grafico silhouette (INVIÁVEL - BASE MUITO GRANDE)
+# fviz_nbclust(dados_pad, kmeans, method = "silhouette") 
+```
+
+### c) Em seguida, aplique PCA para reduzir a dimensionalidade dos dados para 2 componentes apenas para visualização.
+
+```{r, message=FALSE, warning=FALSE}
+pca <- dados %>%
+  prcomp(scale = TRUE) # aplica PCA
+
+# Abaixo é realizado a troca de sinais para tornar a visualização mais efetiva
+
+pca$rotation <- -pca$rotation # troca o sinal das cargas
+pca$x <- -pca$x # troca o sinal dos scores
+
+Phi <- pca$rotation # matriz de cargas de componentes principais
+Phi[,1:5] # Mostrando um preview apenas das 5 primeiras componentes
+```
+
+```{r, message=FALSE, warning=FALSE}
+# O grafico abaixo mostra o percentual explicado da variancia de cada componente
+fviz_eig(pca, addlabels = TRUE, 
+         ncp = 8) + # numero de componentes mostrados
+  labs(x = "Componente Principal",
+       y = "Percentual explicado da variância")
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Abaixo obtemos a soma acumulada do percentual explicado da variancia
+(cumsum(pca$sdev^2) / sum(pca$sdev^2))[1:4]
+```
+
+### d) Plote um gráfico 2D com o resultado do K-means projetado nas duas primeiras componentes principais. Interprete.
+
+```{r, message=FALSE, warning=FALSE}
+
+# Aqui criamos o dataframe que vamos usar no plot.
+# As primeiras 2 colunas são PC1, PC2 e a última será a classificação do KMEANS
+df_p2d <- cbind(as.data.frame(pca$x[, 1:2]),df_p2b$cluster)
+
+# Renomeando as colunas do novo dataframe para PC1, PC2 e cluster
+colnames(df_p2d) <- c("PC1", "PC2","cluster")
+
+# Plot final com os valores transformados para PC1 e PC2
+ggplot(df_p2d, aes(x = PC1, y = PC2, color = as.factor(cluster))) +
+  geom_point(size = 2) +
+  labs(
+    x = "Componente Principal 1",
+    y = "Componente Principal 2",
+    color = "Grupos"
+  )
+```
+
+```{r, message=FALSE, warning=FALSE}
+as.data.frame(df_p2d) %>%
+  group_by(cluster) %>% 
+  summarise(across(where(is.numeric), mean)) %>% 
+  pivot_longer(-cluster) %>% 
+  ggplot(aes(name, value, group = cluster, color = as.factor(cluster))) + 
+  geom_line(size = 1) + 
+  geom_point(size = 4) +
+  labs(x = "", y = "Valor medio (padronizado)", color = "Grupo")
+```
+
+```{r, message=FALSE, warning=FALSE}
+# o grafico abaixo mostra as cargas e os scoroes da PCA em um unico plot
+# os valores nos eixos superior e direito sao as cargas
+# os valores nos eixos esquerdo e inferior sao os scores
+biplot(pca, scale = 0, cex = 0.6,
+       xlab = "PC1",
+       ylab = "PC2")
+```
+
+Tanto no gráfico Scatterplot de PC1 e PC2 quanto no gráfico **biplot** acima, percebe-se uma distinção mais clara de 4 grupos. No **biplot**, pode-se perceber quais das variáveis consideradas na análise de clientes do Pão de Açucar, que mais influencia na classificação de cada cliente como um destes agrupamentos.
+
+Pode-se observar que os clientes mais a direita do gráfico formam um *cluster* que tem como característica principal os `dias desde a última compra`. Já a concetração de clientes mais alta em PC2, parece destacar características de um grupo de clientes de maiores condições financeiras, pois são fatores como `score serasa`, `gasto com vinho`e `renda`. Já o grupo mais próximo dos valores `-6` à esquerda, possui outros fatores um pouco mais aleatórios, como idadde, gasto em cerveja, mercearia, frutas, idade e valor de transação total dos últimos 6 meses.
+
+## **Parte 3: Análise com PCA antes do K-means**
+
+### a) Realize o PCA e escolha o número de componentes que expliquem pelo menos 80% da variância.
+
+O PCA realizado na parte passada pode ser reaproveitado nesta parte, pois se a seed for a mesma, os mesmos resultados serão obtidos.
+
+```{r, message=FALSE, warning=FALSE}
+# Abaixo obtemos a soma acumulada do percentual explicado da variancia
+(cumsum(pca$sdev^2) / sum(pca$sdev^2))[1:4]
+```
+
+### b) Transforme os dados com esse número de componentes.
+
+```{r, message=FALSE, warning=FALSE}
+# Cria um df com os dados padronizados + 4 colunas de PCA
+pca_p3b <- cbind(dados_pad,pca$x[,1:4])
+```
+
+### c) Aplique o K-means inicialmente com apenas duas componentes principais e interprete o resultado visualizando o gráfico das duas primeiras componentes.
+
+```{r, message=FALSE, warning=FALSE}
+# Cria um df com os dados 2 colunas de PC1 e PC2
+pca_p3c <- pca$x[,1:2]
+
+# Cria um df com os valores de PC1 e PC2 para cada cliente,
+# e adiciona 1 coluna com o cluster de cada cliente pelo método KMEANS
+df_p3c <- cbind(pca_p3c,(kmeans(pca_p3c, centers = 6, nstart = 10)$cluster))
+
+# Renomeia as colunas
+colnames(df_p3c) <-c("PC1","PC2","cluster")
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+# Plot final com os valores transformados para PC1 e PC2
+
+# Aqui faz-se o plot do Kmeans igual ao da parte 2, para comparação
+plot1 <- ggplot(df_p2d, aes(x = PC1, y = PC2, color = as.factor(cluster))) +
+  geom_point(size = 2) +
+  labs(
+    x = "PC1",
+    y = "PC2",
+    color = "Grupos"
+  ) +
+  ggtitle("Kmeans baseado nos dados")
+
+# Aqui sim é plotado o gráfico do Kmeans feito com base nas componentes principais
+plot2 <- ggplot(df_p3c, aes(x = PC1, y = PC2, color = as.factor(cluster))) +
+  geom_point(size = 2) +
+  labs(
+    x = "PC1",
+    y = "PC2",
+    color = "Grupos"
+  ) +
+  ggtitle("Kmeans beseado em PC1 e PC2")
+
+plot1 + plot2 + plot_layout(ncol = 2, guides = "collect")
+```
+
+```{r,message=FALSE, warning=FALSE}
+# Gráfico 1 (com PCA após KMEANS)
+plot1 <- as.data.frame(df_p2d) %>%
+  group_by(cluster) %>% 
+  summarise(across(where(is.numeric), mean)) %>% 
+  pivot_longer(-cluster) %>% 
+  ggplot(aes(name, value, group = cluster, color = as.factor(cluster))) + 
+  geom_line(size = 1) + 
+  geom_point(size = 4) +
+  labs(x = "", y = "Média (KMEANS Baseado nos Dados Originais)", color = "Grupo")
+
+# Gráfico 2 (com KMEANS baseado em 2 PCAs)
+plot2 <- as.data.frame(df_p3c) %>%
+  group_by(cluster) %>% 
+  summarise(across(where(is.numeric), mean)) %>% 
+  pivot_longer(-cluster) %>% 
+  ggplot(aes(name, value, group = cluster, color = as.factor(cluster))) + 
+  geom_line(size = 1) + 
+  geom_point(size = 4) +
+  labs(x = "", y = "Média (KMEANS Baseado no PC1 e PC2", color = "Grupo")
+
+# Combinar os gráficos lado a lado, sem compartilhar eixos
+plot1 + plot2 + plot_layout(ncol = 2, guides = "collect")
+```
+
+Observa-se através dos gráficos comparativos acima, que numéricamente os valores não são muito diferentes, apesar do *KMEANS* ser aplicado sobre as **Componentes Principais** ao invés das variáveis originais da base de dados.
+
+Contudo, no primeiro gráfico, de dispersão, a separação entre os *clusters* é bem melhor, ao que se refere à distribuição entre PC1 e PC2, já que, ao aplicar o *KMEANS* sobre os dados originais, os mesmos se misturavam e sobrepunham entre si. Isso não ocorre tanto quando o *KMEANS* é aplicado nos valores de PC1 e PC2
+
+### d) Depois, aplique o K-means novamente, mas com o número de componentes necessário para obter 80% da variabilidade dos dados.
+
+```{r, message=FALSE, warning=FALSE}
+pca4 <- pca$x[,1:4]
+df_p3d <- cbind(pca4,(kmeans(pca4, centers = 6, nstart = 10)$cluster))
+colnames(df_p3d) <-c("PC1","PC2","PC3","PC4","cluster")
+```
+
+```{r, message=FALSE, warning=FALSE}
+as.data.frame(df_p3d) %>%
+  group_by(cluster) %>% 
+  summarise(across(where(is.numeric), mean)) %>% 
+  pivot_longer(-cluster) %>% 
+  ggplot(aes(name, value, group = cluster, color = as.factor(cluster))) + 
+  geom_line(size = 1) + 
+  geom_point(size = 4) +
+  labs(x = "", y = "Valor médio Parte 2", color = "Grupo")
+```
+
+### e) Escolha o número de clusters utilizando métodos como o cotovelo e/ou silhueta.
+
+```{r,message=FALSE, warning=FALSE}
+k <- 2:20
+tibble(k = k) %>% 
+  mutate(w = map_dbl(k, ~ kmeans(df_p3d, centers = .x,
+                                 nstart = 10)$tot.withinss)) %>% 
+  ggplot(aes(k, w)) + 
+  geom_point() + 
+  scale_x_continuous(breaks = k) +
+  geom_line()
+
+```
+
+Após a análise dos gráficos, considerou-se alterar o número de clusters escolhido para 4, pois visualmente, os clientes se concentram em torno de 4 grupos. Contudo, o gráfico de cotovelo continua indicando um bom agrupamento de Kmeans em 6 clusters.
+
+```{r, message=FALSE, warning=FALSE}
+
+# Verificando quais variáveis mais influenciam em cada **Componente Principal**
+
+# PC1
+pca %>% 
+  fviz_contrib(choice = "var", axes = 1, sort.val = "asc",
+               fill = "steelblue", color = "black") +
+  labs(x = "", title = "Contribuicoes das variáveis") +
+  coord_flip()
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+# PC2
+pca %>% 
+  fviz_contrib(choice = "var", axes = 2, sort.val = "asc",
+               fill = "steelblue", color = "black") +
+  labs(x = "", title = "Contribuicoes das variáveis") +
+  coord_flip()
+
+```
+
+Os gráficos acima demonstram as variáveis que mais influenciam na PC1 e PC2. Como comentado anteriormente, a PC1 reflete fatores de engajamento do cliente, enquanto o PC2 reflete fatores que distinguem a classe social-financeira (renda, serasa, gasto com vinhos).
+
+```{r, message=FALSE, warning=FALSE}
+
+# PC3
+pca %>% 
+  fviz_contrib(choice = "var", axes = 3, sort.val = "asc",
+               fill = "steelblue", color = "black") +
+  labs(x = "", title = "Contribuicoes das variáveis") +
+  coord_flip()
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+# PC4
+pca %>% 
+  fviz_contrib(choice = "var", axes = 4, sort.val = "asc",
+               fill = "steelblue", color = "black") +
+  labs(x = "", title = "Contribuicoes das variáveis") +
+  coord_flip()
+
+```
+
+As componentes principais 3 e 4, por outro lado, refletem os gastos com queijo, vinho e cerveja, e a interpretabilidade destes é um pouco mais difícil.
+
+## **Parte 4: Comparação entre as abordagens**
+
+Compare as abordagens de aplicar K-means antes e depois do PCA.
+
+Discuta as diferenças nos agrupamentos obtidos.
+
+c) Avalie vantagens e limitações de cada estratégia para este caso.
+
+A aplicação do K-means antes ou depois do PCA influencia diretamente tanto na performance quanto na interpretabilidade dos clusters gerados. Quando o K-means é aplicado nos dados originais padronizados, ele preserva toda a variância existente, garantindo que todas as variáveis (como idade, renda, ou gastos por categoria) participem da formação dos agrupamentos. Isso torna os resultados mais facilmente interpretáveis no contexto do negócio, já que os clusters podem ser diretamente relacionados às variáveis originais. Essa abordagem funciona bem em bases de dados com baixa ou média dimensionalidade. No entanto, apresenta limitações importantes: é sensível ao ruído e à multicolinearidade, pois variáveis altamente correlacionadas podem distorcer os centros dos clusters.
+
+Por outro lado, ao aplicar o PCA antes do K-means, há uma redução significativa de ruído e redundância, uma vez que o PCA elimina as correlações entre variáveis, permitindo que o K-means atue sobre componentes mais “limpas” e potencialmente mais informativas. Essa abordagem também é mais eficiente computacionalmente, já que o número de dimensões é reduzido, e pode facilitar a identificação de estruturas latentes nos dados que o K-means sozinho teria dificuldade de detectar. No entanto, essa estratégia compromete a interpretabilidade dos clusters, pois eles passam a ser formados com base em combinações lineares das variáveis originais, dificultando análises de negócio. Além disso, ao selecionar apenas algumas componentes principais (como as duas primeiras, por exemplo), parte da variância dos dados pode ser descartada, o que pode levar à perda de informações relevantes.
+
+Em resumo, a escolha entre aplicar o K-means antes ou depois do PCA depende do equilíbrio desejado entre interpretabilidade e desempenho algorítmico, além da complexidade e dimensionalidade dos dados analisados. Para este caso, como queremos fazer uma **segmentação** dos clientes, é preferível fazer o K-means antes do PCA, pois isso permite entender melhor cada grupo com base nas variáveis originais.
